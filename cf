@@ -1,0 +1,47 @@
+Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      AccessControl: PublicRead
+      BucketName: sahana1234
+      MetricsConfigurations:
+        - Id: EntireBucket
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+        RoutingRules:
+          - RoutingRuleCondition:
+              HttpErrorCodeReturnedEquals: '404'
+              KeyPrefixEquals: out1/
+            RedirectRule:
+              HostName: ec2-11-22-333-44.compute-1.amazonaws.com
+              ReplaceKeyPrefixWith: report-404/
+    DeletionPolicy: Retain
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt
+      - S3Bucket
+      - WebsiteURL
+    Description: URL for website hosted on S3
+  S3BucketSecureURL:
+    Value: !Join
+      - ''
+      - - 'https://html5up.net/paradigm-shift'
+        - !GetAtt
+          - S3Bucket
+          - DomainName
+    Description: Name of S3 bucket to hold website content
+    
+    
+ SAVE THE ABOVE WITH .YAML EXTENSION FILE
+ ---------------------------------------------
+ 
+STEPS FOLLOWED:
+
+search cloud formation and click on it(region should be us-east)
+create stack -> new stack -> template ready -> upload the file -> next
+stack name = <labs3> -> next
+tag: name=application
+     value: ecomm
+next -> submit
+go to outputs and select the link and open it in new tab.
