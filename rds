@@ -1,0 +1,129 @@
+TO DEPLOY ecommweb BY CONNECTING TO RDS CLOUD  
+==============================================
+
+
+--------------------------------------------------
+CREATE VPC WITH 2 PUBLIC AND PRIVATE SUBNETS EACH
+----------------------------------------------------
+VPC-----CREATE VPC-----vpc and more = under name type <lab> = keep AZ, public and private subnet as 2 
+customise subnet CIDR blocks (public--10.0.2(0).0/24, private---10.0.1(3).0/24)
+under NAT gateway select = 1AZ
+under VPC endpoint select = none
+enable dns both
+click on create vpc
+
+-------------------------
+CREATE EC2 INSTANCE
+-------------------------
+EC2 = launch instance
+name -- ecommwebapp = ubuntu
+key pair = vockey (or u can create ur own key pair)
+network settings= edit ---select our vpc
+under subnet info --select public 
+enable auto assign public ip
+security grp ---- ssh=anywhere
+                  http=anywhere
+                  mysql/aurora=anywhere
+launch instance
+
+------------------------------
+CREATE RDS
+-------------------------------
+RDS=create database
+click on standart
+mysql
+engine version - 5.7
+template--free tier
+under settings ---
+master user name==<admin>
+master password == msis12345
+under storage = disable storage autoscaling
+under VPC = select our VPC
+under existing vpc security grp = select launch-wizard
+availability zone == us-east-1b
+under additonal configuration ->  give initial database name
+uncheck backup, encryption,log, monitoring,
+create dababase
+
+---------------------------------------
+CONNECTING TO EC2 INSTANCE
+------------------------------------
+in EC2 under instance --> select the created instance --> go to actions --> connect --> connect
+
+sudo apt-get update
+sudo apt-get install apache2 mysqlclient libapache2-mod-php php-mysql php 
+git clone <https://github.com/sreepathysois/phpmysql-app.git> //copy and paste phpmysql-app website url
+ls
+go to online-shopping-system inside php by using cd command
+ls
+sudo cp -rf  * /var/www/html/.
+cd /var/www/htmll
+ls
+sudo rm -rf index.html
+sudo systemctl restart apache2
+(now the webpage must be available without anycontent -> access through EC2 ip address)
+sudo mysql -h <<copy aand paste the RDS endpoint>> -u admin -p
+(enter the password msis12345)
+ >show databases;
+ (the database we have created must be present)
+ >exit
+ cd database/
+ ls
+ (onlineshop.sql will be present)
+ sudo mysql -h <<copy aand paste the RDS endpoint>> -u admin -p
+ (enter the password msis12345)
+ >show databases;
+ >use rdsdatabase;
+ >show tables;
+ >source onlineshop.sql;
+ exit
+ cd..(go back to var/...)
+ ls
+ sudo vi db.php
+ servername = <endpoint url>;
+ username = "admin";
+ password ="msis12345";
+ db = "rdsdatabase";
+ save and exit
+ sudo systemctl restart apache2
+ now refresh the page
+ 
+ ---------------------------------------------------------------------
+ CONFIGURING LOAD BALANCING FOR HIGH AVAILABILITY AND FAULT TOLERANCE
+ ----------------------------------------------------------------------
+ EC2 -> instances -> <select your ec2 -> actions -> image and template -> create image 
+ image name= <rdsimg>
+ declaration = ami for my rds applicatio
+ tag, key: name, value =rdsimg
+ create and image -> AMI
+ inthe left select for load balancer ->target groups ->create target group
+ target grp name = ELB Targetgroup
+ chose target typr= instances
+ protocol=http
+ port = 80
+ vpc=lab vpc
+ protocol version = HTTP1
+ health check=http
+ tag= key: name, value: ELBTargtgroup
+ next ->register target grp = DONT REGISTER ANYTHING
+ create target group
+ 
+ go to LOad bamlancerin the left 
+ create a load balancer
+ load balancer name= ELB
+ scheme = internet facing
+ select ipv4
+ network mapping = vpc(lab-vpc)
+ mapping =us-east-1a-public 
+ subnet = us-east-1b-public subnet 2
+ 
+ security grp =security grp(web security grp ->listener
+ protocol(HTTP)
+ port= 80
+ target grp(ELBTargetgroup)
+ tag key=name, value =ELB
+ create a load balancer
+ 
+ /////LAUNCH AUTOSCALING GROUP//////
+ 
+in the left go to autoscaling ->
