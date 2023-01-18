@@ -1,0 +1,58 @@
+Load Balancer
+	
+lab 6  it already has 2 ec2 instances. (Web server1)
+
+Create an AMI of the application. 
+select web server 1== actoins ==> Imahe and template ==> create image
+	Name: WebServerAMI==>Image desp==> this is an AMI==>Add a tag, name:WebSeverAmi
+	Create a Image
+you can view your ami in image section
+
+Now creat a load balancer,before that crate a target groups.
+select target groups from load balancing section
+	Create target grp
+		Target grp name: ELBTargetGroup
+		Protocol: http port:80 (Listener process)
+		Select Lab VPC (you are telling where are those reoaurces)
+		Tag, Name: ELBTargetGroup
+		Create Target group
+
+	Create LB
+		Name: ELB
+		Scheme: Internet facing
+		VPC: Lab VPC
+		Security groups: Web Security Group
+		Listeners and routing
+			HTTP:80 : ELBTargetGroup
+		Name: Elb
+		Create ELB
+
+LB gets a DNS name
+
+Now we have to lauch an Auto Scaling group
+First we need to to launch configurations
+	Create a launch configuration
+		Name: ASGLaunchConf
+		AMI:WebSErverAMI
+		Instance type: t2.micro
+		Monitioring :Detailed Monitoring
+		Security Group: Web Security Group
+		Key pair: vockey
+	Create Launch Configuration
+
+	//Select ASGLaunchCOnfig ==>Action==> Selct auto scaling group
+		Name: MyASG
+		VPC: Lab VPC
+		Selct private subnets (launch your lb in public and Web server in private)
+		Load Balancing: attach to an existing lb : ELBTargetGroup
+		Health Check: ELB
+		Monitioring: Enable CloudWatch
+		Group Size:
+			Fleet Management	Desired: 2, Min: 2, Max: 6
+		Scaling Policies: Target Tracking Sacle policy
+			name:
+			Metric type: Avg CPU Utilization
+			Target Val: 50
+			Instance need: 100 seconds (After 100 sec, if CPU_utilzation goes upto 50 for 2 3 times, it will scale up)
+			Try Scale in
+		Name:MyASG
