@@ -1,0 +1,283 @@
+
+sudo vi etc/hosts
+sudo vi /etc/apt/sprces
+
+ip a //Gives the ip address of the system.
+hostname //gives the hostname eg: msis.bda.com
+ssh hostname(server)@ip_address // access the server system
+scp -r  foldername msis@172.16.51.57:/home/msis/.     //to copy files from client to server 
+
+
+//Static Website
+//We need to install Prerequities LAMP stack(Linux,Apache,MySQL,PHP)
+sudo apt-get update //apt is ubuntu's package manager
+sudo apt-get upgrade  //upgrade will update the software, update will not
+sudo apt-get install apache2
+sudo apt-get install php php-mysql libapache2-mod-php
+
+get the source file (generally it wil be in downloads folder, copy that filer to /var/www/html) 
+sudo cp -rf basic-php-website/* /var/www/html.   //if you want to copy all folder then src will be *
+ls /var/www/html //check if the file is copied then restart the server.
+sudo systemctl status/restart apache2  //systemctl is used to check the status and restart the server.
+
+
+// to get the source from git repo
+// go to donwload or any src folder
+git clone https://github.com/sreepathysois/basic-php-website.git
+
+//generally apache will  server the html file since it is in precedence therfore we need to add php first in line to change the precedence.
+sudo vi /etc/apache2/mods-enabled/dir.conf //nano, gedit editor can be used
+//add index.php 
+
+
+
+//vi editor
+	:wq //to save and exit
+	:q! // to exit
+
+
+/////////////////////Dynamic Website////////////////////////////////////
+sudo apt-get install mysql-server mysql-client php.mysql
+sudo systemctl status status mysql
+
+git clone https://github.com/sreepathysois/phpmysql-app.git
+sudo cp -rf /home/msis/phpmysql-app/php/online-shopping-system/* .  (sudo cp -rf . /var/www/html/ecommerce  sudo mkdir ecommerce in var )
+
+//sudo vi /etc/apache2/mods-enabled/dir.conf
+sudo vi /etc/apache2/sites-available/000-default.conf 
+add ecommerce in that file
+
+sudo systemctl restart apacahe2
+
+ sudo mysql -u root -p [-u mean user -p password]
+ 
+ show databases;
+create database ecomm;
+ use EcommDB;
+ show tables;
+ go to database folder and then load the table into db
+ source onlineshop.sql; 
+ 
+ 
+ (for RDS)
+ sudo vi db.php
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////
+ways to access aws account
+1) browser (management console)
+2) SDK
+3) CLI
+
+------------Static Web site using AWS S3 Bucket-------------------------
+S3 is only for static content
+s3(simple storage service)(Object/serverless/Abstracted service)>>buckets>>
+tag is to identify a particular resource amonth multiple resources. (usually helpful during billing)
+
+open bucket
+upload the source code(static web site)
+properties>> Static website hosting >>enable>>Index document(index.html)>>Error document(error.html)>>Save // enabled the bucket to host the website.
+permission>>object Ownership( to give access to public) >>Enable
+go to objects>>select all objects>>actions>>Make public
+Open the link
+
+-------------------------------------------------------------------------
+
+------------Dynamic Web Site using EC2 Instance--------------------------
+
+EC2>Instances > Launch an Instance
+	Select Ubuntu 22.04 AMI (Every AMI will have an AMI ID)
+	Instance Type (t2.micro)
+	Key pair: vockey
+		create a new key pair ==> give name, slect type, ( for win donwload .ppk, for linux .pem)
+	Network Setting : work, enable
+	Source tope : SSH,Aywhere
+	Add Sr2
+	type: HTTP, Anywhere
+	mySQL/Aurora, Anywhere
+	
+	Configure Storage: 1x 8 gp2 SSD
+	Advanced Details: 
+	User Data: 
+	
+Download the private key
+Open the terminal ==> connect to Virtual machine using the ip address and hostname of the VM
+		[ sudo chmod 400 Downloads/labsuser.pem ]
+		ssh -i /home/msis/Downloads/labsuser.pem ubuntu@44.200.57.219
+		
+		
+		
+---------------------------------------------------
+EBS
+
+go to instances ==> Lab instance
+ the instance should be in same a.z as that of vol.
+ vol==>create the vol==>gp ssd(gp2) ==> 1GB ==> az ==> tag: name: myVol ==>Create.
+ 
+ Now attach the vol to the ec2 instance. (additional storage)
+	myvol==>attach the volume==select the instace.(Lab)
+	
+
+df -h  (lsblk/fdisk) to see different devices connected.
+sudo file -s /dev/xvdf   
+sudo mkfs -t ext3 /dev/xvdf
+to validate:  sudo file -s /dev/xvdf
+
+vi /etc/fstab 
+	(if you want the sys tp remember all the storages, then add it this)
+
+sudo mkdir /mnt/data  We are dng this to mount the vol.            (mnt is the folder to mount the external devices)
+sydo mount /dec/vxdf /mnt/data/
+df -h (there will be an entry of the new vol)
+
+
+cd /mnt/data/
+
+sudo touch myfile.txt hello.txt test.txt
+sudo gedit mmyfile.txt
+	Hello this is my file.
+ cat myfile.txt
+ 
+ 
+ Go the dashboard
+ se;ect myvol ==> Actions==>create the snapshot ==> desp: cature the snaphshot ==> tags: name: mysnap ==> Create
+ 
+ Check the snapshots under snapshot section.  EBS will store the data in single copy in one a.z
+ Select tehsnapshot==> crete a vol ==> gp ssd ==> myrestoredvol==create
+ 
+ 
+ --------------------------------------------------------
+ EFS
+ 
+ 
+ ride
+ 
+ ec2 console ==> Instances
+ 
+ copy sg of the efs client
+ 
+ Create a sg ==> Name:EFSMounttarget ==> Inbound rule :  NFS: 2049:custom : Source ==>copies sg of efs client
+
+-------------------------------------------------------
+	
+Managed Database (Relational Database Service)
+
+here we are not resplonsible for license,upgratdation,backup basically managing the DB in Managed DB.
+  
+  
+  ec2 instance ==>
+  
+  Amazon RDS
+  	Create DB ==>Std Create==> Select Engine type( Amaozon Aurora, MySQL,MariaDB, PostgreSQL, Oracle, Microsoft SQL Server) ==> Templates: Free tire
+  	Settings ==> Identifier : NageshDB ==> Master user : admin ==> Password: 
+
+	
+	mysql -h endpoint -u admin -p
+
+
+----------------------------------------------------
+	Load Balancer
+	
+lab 6  it already has 2 ec2 instances. (Web server1)
+
+Create an AMI of the application. 
+select web server 1== actoins ==> Imahe and template ==> create image
+	Name: WebServerAMI==>Image desp==> this is an AMI==>Add a tag, name:WebSeverAmi
+	Create a Image
+you can view your ami in image section
+
+Now creat a load balancer,before that crate a target groups.
+select target groups from load balancing section
+	Create target grp
+		Target grp name: ELBTargetGroup
+		Protocol: http port:80 (Listener process)
+		Select Lab VPC (you are telling where are those reoaurces)
+		Tag, Name: ELBTargetGroup
+		Create Target group
+
+	Create LB
+		Name: ELB
+		Scheme: Internet facing
+		VPC: Lab VPC
+		Security groups: Web Security Group
+		Listeners and routing
+			HTTP:80 : ELBTargetGroup
+		Name: Elb
+		Create ELB
+
+LB gets a DNS name
+
+Now we have to lauch an Auto Scaling group
+First we need to to launch configurations
+	Create a launch configuration
+		Name: ASGLaunchConf
+		AMI:WebSErverAMI
+		Instance type: t2.micro
+		Monitioring :Detailed Monitoring
+		Security Group: Web Security Group
+		Key pair: vockey
+	Create Launch Configuration
+
+	//Select ASGLaunchCOnfig ==>Action==> Selct auto scaling group
+		Name: MyASG
+		VPC: Lab VPC
+		Selct private subnets (launch your lb in public and Web server in private)
+		Load Balancing: attach to an existing lb : ELBTargetGroup
+		Health Check: ELB
+		Monitioring: Enable CloudWatch
+		Group Size:
+			Fleet Management	Desired: 2, Min: 2, Max: 6
+		Scaling Policies: Target Tracking Sacle policy
+			name:
+			Metric type: Avg CPU Utilization
+			Target Val: 50
+			Instance need: 100 seconds (After 100 sec, if CPU_utilzation goes upto 50 for 2 3 times, it will scale up)
+			Try Scale in
+		Name:MyASG
+
+		
+-----------------------------------------------------
+Cloud Formation (IaaC)
+
+cloudFormation==>Create Stack==>Temp;ate is ready==>Upload a template==>choose file==>lab-network.yaml==>stack name: lab-network==>Application:Ecommerce ==>Create
+Do the same process for lab-application.yaml
+
+------------------------------------------------------
+Dyanamo DB
+
+Create table==>name:test-table==>Partitin key:ID(number)==>Customiz setting==>(to set secondary index for the table)
+	Partition key:ProductCompany(String), Sort:Price(Number)
+	
+	
+	go to ec2 instance ande create one
+		search for nodejs ami and slect nodejs and sample webserver
+	
+	Create an IAM role
+		AWS service (EC2 instances)
+		select AmazonDynamoDBFullAccess policy
+		
+	Attach this role to Ec2 instannce (Action==>Security==>modify roles)
+	
+	s3
+	
+Atom==>
+Add a new server under remote section
+nodejssdk==>public address of ec2 instance==>Sftp==>keyfile,PEM==>root==>complete path of key(ppk for Win and pem for ununtu)
+
+
+		
+
+create a vpc which spans across multiple az ad each one shld have public and private subnets. DB subnet group is collection of vpc across multiple az. Iin ec2 instance launch an web server. Create an rds instance in db subnet group running on your private subnets with mysql has your db engine. 
+
+-------------------------------------------------------------
+Redshift (Warehouse service
+
+diff between s3 and ebs (throughput,cost,speed)
+
+https://www.varonis.com/blog/create-s3-bucket
+https://cloudkatha.com/how-to-create-an-s3-bucket-using-cloudformation/
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket.html
