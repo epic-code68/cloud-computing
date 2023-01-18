@@ -1,0 +1,25 @@
+sudo mysql -u root -p
+create database ecomm;
+use ecomm;
+show tables;
+source onlineshop.sql;
+show tables;
+exit
+sudo mysql -u root -p
+ CREATE USER 'MSIS'@'localhost' IDENTIFIED BY 'MSIS@123'
+ GRANT ALL PRIVILEGES ON ecomm .* To 'MSIS'@'localhost';
+ ALTER USER 'msis'@'localhost' IDENTIFIED WITH mysql_native_password by 'msis@123';
+ sudo mysql -u msis -p
+ enter pasword
+ check 
+ exit
+ cd /var/ww/html/ecommerce/database
+ cd..
+ sudo nano db.php
+ enter servername:"localhost";
+ username:"msis"
+ password:"msis@123";
+ db="ecomm";
+ :wq
+ sudo systemctl restart apache2
+ check : 172.16.51.69 
